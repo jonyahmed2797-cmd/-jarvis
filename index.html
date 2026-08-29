@@ -1,12 +1,771 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>JARVIS</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>JARVIS | Personal System</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#03080e;
+    color:#eafcff;
+    font-family:Arial, sans-serif;
+    min-height:100vh;
+}
+
+/* NAVBAR */
+
+nav{
+    height:70px;
+    padding:0 6%;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:rgba(4,15,24,.9);
+    border-bottom:1px solid #063b4a;
+    position:sticky;
+    top:0;
+    z-index:100;
+    backdrop-filter:blur(15px);
+}
+
+.logo{
+    color:#00eaff;
+    font-size:24px;
+    font-weight:bold;
+    letter-spacing:4px;
+    text-shadow:0 0 15px #00eaff;
+}
+
+.nav-buttons{
+    display:flex;
+    gap:10px;
+}
+
+.nav-buttons button{
+    background:transparent;
+    border:1px solid #075267;
+    color:#9befff;
+    padding:9px 15px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.nav-buttons button:hover{
+    background:#073442;
+    border-color:#00eaff;
+}
+
+/* PAGES */
+
+.page{
+    display:none;
+    max-width:1200px;
+    margin:auto;
+    padding:55px 25px;
+}
+
+.page.active{
+    display:block;
+}
+
+/* HOME */
+
+.hero{
+    text-align:center;
+    padding:30px 0 50px;
+}
+
+.hero small{
+    color:#62dff5;
+    letter-spacing:4px;
+}
+
+.hero h1{
+    font-size:clamp(55px,10vw,105px);
+    letter-spacing:10px;
+    margin:15px 0;
+    text-shadow:0 0 15px #00eaff,0 0 40px #007d99;
+}
+
+.hero p{
+    color:#7898a2;
+}
+
+.reactor{
+    width:150px;
+    height:150px;
+    margin:40px auto;
+    border-radius:50%;
+    border:2px solid #00eaff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    box-shadow:0 0 30px #00eaff, inset 0 0 30px #00eaff;
+    animation:pulse 2.5s infinite;
+}
+
+.core{
+    width:55px;
+    height:55px;
+    border-radius:50%;
+    background:white;
+    box-shadow:0 0 30px white,0 0 70px #00eaff;
+}
+
+@keyframes pulse{
+    50%{transform:scale(1.08)}
+}
+
+/* DASHBOARD */
+
+.section-title{
+    color:#8defff;
+    letter-spacing:3px;
+    margin-bottom:20px;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+}
+
+.card{
+    padding:28px;
+    min-height:170px;
+    background:linear-gradient(145deg,#0a202c,#050d14);
+    border:1px solid #084354;
+    border-radius:18px;
+    cursor:pointer;
+    transition:.3s;
+}
+
+.card:hover{
+    transform:translateY(-7px);
+    border-color:#00eaff;
+    box-shadow:0 0 25px rgba(0,234,255,.2);
+}
+
+.card .icon{
+    font-size:40px;
+    margin-bottom:18px;
+}
+
+.card h3{
+    color:#dffaff;
+    margin-bottom:8px;
+}
+
+.card p{
+    color:#66838c;
+    font-size:13px;
+}
+
+/* MARVEL */
+
+.marvel-title{
+    text-align:center;
+    margin-bottom:35px;
+}
+
+.marvel-title h1{
+    color:#ff3030;
+    font-size:45px;
+    text-shadow:0 0 20px #ff0000;
+}
+
+.marvel-title p{
+    color:#829ca5;
+    margin-top:10px;
+}
+
+/* SEARCH */
+
+.search{
+    width:100%;
+    padding:15px 18px;
+    margin-bottom:20px;
+    background:#07131d;
+    border:1px solid #174554;
+    border-radius:10px;
+    color:white;
+    outline:none;
+    font-size:15px;
+}
+
+.search:focus{
+    border-color:#00eaff;
+}
+
+/* FILTERS */
+
+.filters{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:30px;
+}
+
+.filters button{
+    padding:9px 14px;
+    background:#081923;
+    color:#91eaf7;
+    border:1px solid #155063;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.filters button:hover,
+.filters button.active{
+    background:#0b3a49;
+    border-color:#00eaff;
+}
+
+/* MOVIES */
+
+.movies{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:18px;
+}
+
+.movie{
+    background:#07121a;
+    border:1px solid #173b46;
+    border-radius:14px;
+    overflow:hidden;
+    transition:.3s;
+}
+
+.movie:hover{
+    transform:translateY(-5px);
+    border-color:#e02b2b;
+    box-shadow:0 0 20px rgba(255,0,0,.18);
+}
+
+.poster{
+    height:220px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(135deg,#111,#250707);
+    font-size:45px;
+}
+
+.movie-info{
+    padding:15px;
+}
+
+.movie-info h3{
+    font-size:16px;
+    margin-bottom:8px;
+}
+
+.movie-info p{
+    color:#78949d;
+    font-size:13px;
+    margin-bottom:12px;
+}
+
+.watch{
+    width:100%;
+    padding:9px;
+    background:#0a2029;
+    color:#9defff;
+    border:1px solid #15586a;
+    border-radius:7px;
+    cursor:pointer;
+}
+
+.watch.done{
+    background:#073b28;
+    color:#5dffb0;
+    border-color:#18c77c;
+}
+
+/* MOBILE */
+
+@media(max-width:850px){
+    .dashboard,
+    .movies{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:550px){
+    .dashboard,
+    .movies{
+        grid-template-columns:1fr;
+    }
+
+    .nav-buttons button{
+        padding:7px 9px;
+    }
+
+    .logo{
+        font-size:18px;
+    }
+}
+</style>
 </head>
+
 <body>
 
-    <h1>🤖 Welcome to JARVIS</h1>
-    <p>This is my personal website.</p>
+<nav>
+
+    <div class="logo">JARVIS</div>
+
+    <div class="nav-buttons">
+        <button onclick="showPage('home')">🏠 HOME</button>
+        <button onclick="showPage('marvel')">🦸 MARVEL</button>
+    </div>
+
+</nav>
+
+
+<!-- HOME -->
+
+<section id="home" class="page active">
+
+    <div class="hero">
+
+        <small>PERSONAL INTELLIGENCE SYSTEM</small>
+
+        <h1>JARVIS</h1>
+
+        <p>Welcome back, Sir. Your system is online.</p>
+
+        <div class="reactor">
+            <div class="core"></div>
+        </div>
+
+    </div>
+
+    <div class="section-title">
+        CONTROL CENTER
+    </div>
+
+    <div class="dashboard">
+
+        <div class="card">
+            <div class="icon">🖼️</div>
+            <h3>PHOTOS</h3>
+            <p>Your personal photo collection.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon">📁</div>
+            <h3>FILES</h3>
+            <p>Your personal documents.</p>
+        </div>
+
+        <div class="card" onclick="showPage('marvel')">
+            <div class="icon">🦸</div>
+            <h3>MARVEL HUB</h3>
+            <p>Marvel movies and watching order.</p>
+        </div>
+
+        <div class="card">
+            <div class="icon">📝</div>
+            <h3>NOTES</h3>
+            <p>Your personal notes.</p>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- MARVEL -->
+
+<section id="marvel" class="page">
+
+    <div class="marvel-title">
+
+        <h1>MARVEL HUB</h1>
+
+        <p>Your personal Marvel movie database.</p>
+
+    </div>
+
+    <input
+        id="search"
+        class="search"
+        type="text"
+        placeholder="🔎 Search Marvel movie..."
+        onkeyup="searchMovies()"
+    >
+
+    <div class="filters">
+
+        <button class="active" onclick="filterMovies('all',this)">
+            ALL
+        </button>
+
+        <button onclick="filterMovies('MCU',this)">
+            MCU
+        </button>
+
+        <button onclick="filterMovies('Spider-Man',this)">
+            SPIDER-MAN
+        </button>
+
+        <button onclick="filterMovies('X-Men',this)">
+            X-MEN
+        </button>
+
+        <button onclick="filterMovies('Deadpool',this)">
+            DEADPOOL
+        </button>
+
+        <button onclick="filterMovies('Venom',this)">
+            VENOM
+        </button>
+
+    </div>
+
+    <div id="movies" class="movies"></div>
+
+</section>
+
+
+<script>
+
+/* PAGE SYSTEM */
+
+function showPage(page){
+
+    document.querySelectorAll(".page")
+    .forEach(p => p.classList.remove("active"));
+
+    document.getElementById(page)
+    .classList.add("active");
+
+    window.scrollTo(0,0);
+}
+
+
+/* MOVIE DATABASE */
+
+const movies = [
+
+{
+name:"Iron Man",
+year:2008,
+category:"MCU",
+order:1
+},
+
+{
+name:"The Incredible Hulk",
+year:2008,
+category:"MCU",
+order:2
+},
+
+{
+name:"Iron Man 2",
+year:2010,
+category:"MCU",
+order:3
+},
+
+{
+name:"Thor",
+year:2011,
+category:"MCU",
+order:4
+},
+
+{
+name:"Captain America: The First Avenger",
+year:2011,
+category:"MCU",
+order:5
+},
+
+{
+name:"The Avengers",
+year:2012,
+category:"MCU",
+order:6
+},
+
+{
+name:"Iron Man 3",
+year:2013,
+category:"MCU",
+order:7
+},
+
+{
+name:"Thor: The Dark World",
+year:2013,
+category:"MCU",
+order:8
+},
+
+{
+name:"Captain America: The Winter Soldier",
+year:2014,
+category:"MCU",
+order:9
+},
+
+{
+name:"Guardians of the Galaxy",
+year:2014,
+category:"MCU",
+order:10
+},
+
+{
+name:"Avengers: Age of Ultron",
+year:2015,
+category:"MCU",
+order:11
+},
+
+{
+name:"Ant-Man",
+year:2015,
+category:"MCU",
+order:12
+},
+
+{
+name:"Captain America: Civil War",
+year:2016,
+category:"MCU",
+order:13
+},
+
+{
+name:"Doctor Strange",
+year:2016,
+category:"MCU",
+order:14
+},
+
+{
+name:"Spider-Man: Homecoming",
+year:2017,
+category:"Spider-Man",
+order:15
+},
+
+{
+name:"Thor: Ragnarok",
+year:2017,
+category:"MCU",
+order:16
+},
+
+{
+name:"Black Panther",
+year:2018,
+category:"MCU",
+order:17
+},
+
+{
+name:"Avengers: Infinity War",
+year:2018,
+category:"MCU",
+order:18
+},
+
+{
+name:"Avengers: Endgame",
+year:2019,
+category:"MCU",
+order:19
+},
+
+{
+name:"Spider-Man: Far From Home",
+year:2019,
+category:"Spider-Man",
+order:20
+},
+
+{
+name:"Spider-Man: No Way Home",
+year:2021,
+category:"Spider-Man",
+order:21
+},
+
+{
+name:"Deadpool",
+year:2016,
+category:"Deadpool",
+order:22
+},
+
+{
+name:"Deadpool 2",
+year:2018,
+category:"Deadpool",
+order:23
+},
+
+{
+name:"Venom",
+year:2018,
+category:"Venom",
+order:24
+},
+
+{
+name:"Venom: Let There Be Carnage",
+year:2021,
+category:"Venom",
+order:25
+},
+
+{
+name:"Logan",
+year:2017,
+category:"X-Men",
+order:26
+}
+
+];
+
+
+/* DISPLAY MOVIES */
+
+function displayMovies(list){
+
+    const container =
+        document.getElementById("movies");
+
+    container.innerHTML = "";
+
+    list.forEach(movie => {
+
+        const card =
+        document.createElement("div");
+
+        card.className = "movie";
+
+        card.innerHTML = `
+
+            <div class="poster">
+                🦸
+            </div>
+
+            <div class="movie-info">
+
+                <h3>${movie.name}</h3>
+
+                <p>
+                    ${movie.year}
+                    • ${movie.category}
+                    • Order ${movie.order}
+                </p>
+
+                <button
+                    class="watch"
+                    onclick="markWatched(this,'${movie.name}')"
+                >
+                    ✓ MARK AS WATCHED
+                </button>
+
+            </div>
+        `;
+
+        container.appendChild(card);
+
+    });
+}
+
+
+/* WATCHED */
+
+function markWatched(button,name){
+
+    button.classList.toggle("done");
+
+    if(button.classList.contains("done")){
+
+        button.innerText = "✓ WATCHED";
+
+        localStorage.setItem(
+            "watched-"+name,
+            "true"
+        );
+
+    }else{
+
+        button.innerText = "✓ MARK AS WATCHED";
+
+        localStorage.removeItem(
+            "watched-"+name
+        );
+
+    }
+}
+
+
+/* FILTER */
+
+function filterMovies(category,button){
+
+    document
+    .querySelectorAll(".filters button")
+    .forEach(b => b.classList.remove("active"));
+
+    button.classList.add("active");
+
+    if(category === "all"){
+
+        displayMovies(movies);
+
+    }else{
+
+        displayMovies(
+            movies.filter(
+                movie => movie.category === category
+            )
+        );
+
+    }
+}
+
+
+/* SEARCH */
+
+function searchMovies(){
+
+    const text =
+        document.getElementById("search")
+        .value
+        .toLowerCase();
+
+    const result =
+        movies.filter(movie =>
+            movie.name.toLowerCase().includes(text)
+        );
+
+    displayMovies(result);
+}
+
+
+/* START */
+
+displayMovies(movies);
+
+</script>
 
 </body>
 </html>
