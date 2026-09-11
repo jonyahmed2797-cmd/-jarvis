@@ -1,369 +1,384 @@
-# Executive Summary  
-An **interactive birthday website** (“A Little World Made For You — Rapunzel”) will be built as a **single HTML file** using only HTML, CSS, and JS (no heavy frameworks). The site will be **mobile-first** and performance-optimized, following 2026 design best practices. Key principles: use **transform/opacity animations** (smooth on mobile), lean code, optimized images, and avoid heavy 3D/WebGL. We will implement a short “mini-story” flow: **mystery star → chase/tap → open gift → blow candles → memory room with images → handwritten letter → final reveal → secret P.S.**. All interactions use simple CSS transitions and JS event handlers; touch/tap gestures work on mobile. Assets will be **public-domain or CC0 images** (no Disney-owned art), embedded via safe URLs. Accessibility and inclusion are considered (alt text for images, appropriate tap targets, reduced-motion option). We’ll use progressive enhancement/fallbacks (e.g. ensure basic content shows if JS is off, avoid non-essential effects for older browsers). The result is a **lightweight, single-page birthday site** deployable on GitHub Pages (no server needed).  
+# Executive Summary
 
-# Features Checklist (mobile-first, interactive, performance)  
+We will build a **mobile-first, single-page interactive birthday site** in one `index.html` for Rapunzel. It uses only HTML/CSS/JavaScript (no heavy frameworks) and is hosted on GitHub Pages. The site will feel like an animated story, with **cinematic transitions**, layered parallax, touch-activated particles/lanterns, a 3D-like gift opening, flickable candles, a scrollable “memory room” of photos, an unfolding letter, and a final secret message. Performance is paramount: we rely on CSS transforms and Web Animations (avoid layout thrashing), use feature detection and progressive enhancement, and keep libraries minimal (e.g. Anime.js ~17KB gzipped vs GSAP core ~25KB). User-uploaded photos will be saved in `localStorage` (≈5 MB limit), or optionally a cloud service if cross-device sync is needed. All code and assets live in one file or referenced from CDN, so deployment is simple (push to GitHub Pages and enable it). Key technical approaches (Touch Events API, requestAnimationFrame, IntersectionObserver, etc.) are chosen for smooth mobile experience. The plan below details features, choices, code structure, asset handling, and a deployment checklist.
 
-1. **Setup & Structure:** Use a single `index.html`. Include `<meta name="viewport" content="width=device-width,initial-scale=1">` for mobile. Use semantic sections (intro, star chase, gift, candles, memories, letter, final, secret).  
-2. **Mystery Opening:** Dark fullscreen with a tiny glowing dot → animated into a star. Fade-in text “I made something for you. …But you have to find it.” Show **Start ✨** button. (JS toggles section visibility.)  
-3. **Follow the Light:** A glowing star moves randomly on screen (using `transform` transitions). Tapping the star progresses steps. Each tap adds layers (more stars, then moon 🌙, floating particles, lanterns) via CSS classes/transforms. This builds suspense with micro-animations (using only opacity/translate for performance). After 5 taps, reveal text “There you are. ❤️”.  
-4. **Mystery Box:** Show a glowing gift box centered. On tap, play a CSS burst (scale/opacity) and swap it with a birthday cake image 🍰 (no candles yet). Display text “I have something for you…”. (Ensure animations use `transform`/`opacity` and `will-change` hints for GPU acceleration.)  
-5. **Candle Wishing:** Sequentially show 3 candles on the cake. Prompt “Make a wish.” Tapping each candle triggers a short flame→smoke fade-out animation (using CSS keyframes: scale/opacity). After all 3 are blown (flames out), play a small confetti burst (particles and celebration sound). This uses lightweight CSS animations (no canvas).  
-6. **Memory Room:** Transition to a “photo room” background. Display three tappable photo frames (positions with a bit of parallax/depth effect on tilt) containing Rapunzel-themed images. Use the 3 chosen CC0 images (see **Image Assets** below). Each frame has a short caption. Tapping a frame enlarges it slightly (simple `transform: scale()` CSS) or could simply fade in a larger view. (We’ll ensure readable alt-text like “Memory: That smile…” for accessibility.)  
-7. **Handwritten Letter:** After memories, clear the screen to a blank page with an envelope icon. Tapping opens it to reveal a multiline letter in a handwritten font. Use a JS *typewriter effect*: add one character at a time (with a small delay) to simulate writing. The letter should be personal (sample text provided). Make sure text is large enough for mobile and has good contrast (Figma notes high-contrast palettes and voice/keyboard support are trending).  
-8. **Final Reveal:** After the letter, slowly zoom out (scale transform) to show the whole “birthday world” (moon, stars, lanterns, cake, photos, hearts) as a cohesive scene. Then fade in final text: **“Happy Birthday, Rapunzel.”** Pause, then show “I hope this little world made you smile. Because you deserve a beautiful year ahead. ❤️”.  
-9. **Secret P.S.:** Finally reveal a **“P.S.”** button. On tap, show: “You thought that was everything? 👀” and reveal a second surprise (e.g. a second gift or favorite photo/video). This uses the same tap-to-open animation. This twist is small and uses another CSS burst or just fades in an extra message.  
+## Prioritized Features (with complexity, cost, fallback)
 
-**Mobile Performance:** All animations use `transform` and `opacity` (GPU-accelerated). Avoid layout-triggering animations (no margin/width animating). Limit asset size: compress images (file sizes <100KB if possible). Use `will-change` sparingly on animating elements. Lazy-load non-critical images (e.g. memory photos can load after gift animation). No external libraries; all code and CSS are inline. Keep CSS under ~20KB, JS under ~30KB. No ads or tracking – all static.  
+- **Cinematic Opening Scene:** A full-screen intro with animating Rapunzel-themed artwork (panning, fade-in text). *Complexity:* High (timed CSS keyframes). *Performance:* Medium (CSS-only, GPU-accelerated). *Fallback:* Plain static title if animations disabled.  
+- **Star-Hunt Interaction:** Tap-floating stars to collect (count 5). Stars glow and trigger on-click particles. *Complexity:* Medium. *Performance:* Medium. *Fallback:* If touch absent, stars appear static or you auto-complete.  
+- **Gift Box Opening:** A 3D-looking gift. On tap, the lid slides open (CSS `transform`), a “flash” animation and particles burst out, then transition to next scene. *Complexity:* High. *Performance:* Medium (one CSS animation, one JS trigger). *Fallback:* Simply replace with a “Open” button to reveal next content.  
+- **Cake with Candles:** A stylized cake graphic with three candle elements. Detect swipe or flick gesture to extinguish each flame (remove flame element). Use a subtle “puff” animation when done. *Complexity:* Medium. *Performance:* Low. *Fallback:* Tapping toggles flame on/off without swipe; if no JS, show cake image without interaction.  
+- **Memory Room (Photo Gallery):** A grid of 3 placeholder frames (Rapunzel scenes). Tapping a frame opens a modal with a title and text. A “+” button lets user upload a photo (via `<input type=file>`) which replaces a placeholder and saves base64 in `localStorage`. *Complexity:* Low. *Performance:* Low. *Fallback:* If no JS, show static images/text; uploading disabled (explain “use modern browser”).  
+- **Letter Envelope:** Show an envelope graphic. On tap, animate flap opening (CSS flip). Then reveal a letter (`<div>` with scrollable text) that types out (char-by-char JS typing). *Complexity:* Medium (CSS transform + JS timing). *Performance:* Low. *Fallback:* Envelope opens instantly, letter text all visible.  
+- **Final World Reveal:** A scene with floating lanterns and stars. The camera “pulls back” (simulated by zoom-out or elements moving slower) to reveal “Happy Birthday Rapunzel” text with a heart animation. *Complexity:* High (multiple layers, parallax). *Performance:* Medium (CSS transforms + `requestAnimationFrame`). *Fallback:* Static final image and message.  
+- **Secret P.S. Message:** A hidden “P.S.” button reveals a locked box. Tapping it plays a quick flash and transitions to a secret congratulatory message. *Complexity:* Low. *Performance:* Low. *Fallback:* No secret if JS off (just final message).
 
-**Accessibility:** Every image has meaningful `alt` text (e.g. “Child dressed as fairy princess” for image of Rapunzel-themed girl). Buttons/tappable elements have large enough hit areas (at least 48×48px). Support keyboard: the “Start”, “Make a wish”, and “P.S.” can be activated by Enter key (via `button` or `tabindex`). Include `aria-labels` on decorative hearts/particles if needed (or mark them `aria-hidden`). Provide a “prefers-reduced-motion” CSS media query fallback: if set, skip auto-animations and just show final states (this can be done by disabling CSS animations). High-contrast color scheme ensures text is legible.  
+Each animation uses GPU-friendly transforms (no layout-triggering changes). We avoid heavy effects (no background-attachment:fixed on mobile) and only add them if the device can handle it (use media queries to disable on low-end phones). 
 
-**Progressive Enhancement & Fallbacks:** The core message (“Happy Birthday, Rapunzel”) and images should display even if JS fails. We can put a basic greeting in the HTML body as default. All fancy interactions (star chase, typing) degrade gracefully if scripts disabled. (For example, sections besides intro are hidden by default; if JS is off, ensure some final message is still visible.) Use modern CSS, but include vendor prefixes or simpler properties for older browsers. Avoid features like CSS custom properties in critical layouts (older browsers fall back to defaults).  
+## Recommended Technology
 
-**Deployment (GitHub Pages):** Simply push the final `index.html` to a GitHub repository (set to use GitHub Pages). Since it’s static and single-file, nothing else is needed. Ensure `<base href="">` is correct if used. No server, no CORS issues. All assets are loaded from secure (HTTPS) CDNs or public URLs.  
+- **Core Stack:** Vanilla HTML5/CSS3/JavaScript.  We do **not use a build step**; all code (including CSS and JS) is in one file. This fits GitHub Pages (static) and ensures offline use. Use semantic HTML elements and ARIA labels for accessibility (tab order for modals/buttons, etc.).  
+- **CSS:** Use modern features: CSS Grid/Flexbox for layout, `transform: translate3d/scale/rotate` and `opacity` for animations (hardware-accelerated). Use CSS variables for theming (colors/fonts). Include keyframe animations or the Web Animations API for timeline control. Avoid `background-attachment: fixed` on mobile (poor support); simulate parallax by transforming layers on scroll/drag.  
+- **JavaScript:** Minimal “frameworks”. Use ES6+ (modern `querySelector`, `classList`, arrow functions, etc). Key APIs: 
+  - **Touch/Pointer Events:** `touchstart`, `touchmove`, `touchend` (or PointerEvents) to detect taps and swipes. Use `preventDefault()` on `touchmove` to stop scrolling during gestures.  
+  - **requestAnimationFrame:** For any continuous animations or parallax updates (smooth 60fps).  
+  - **IntersectionObserver:** (Optional) to trigger animations when elements scroll into view, though this app is one-page with no real scrolling.  
+  - **LocalStorage:** For photo upload persistence. We’ll `readAsDataURL()` from an `<input>` and store strings in `localStorage` (max ~5 MB). Use `try…catch` around `localStorage.setItem()` in case of full quota.  
+  - **Web Animations API:** Could use [115†Web Animations] (native JS animations with easing), but CSS keyframes suffice.  
+- **Small Libraries (only if necessary):**  
+  We prefer **no libraries** for core interactions. If a tiny helper is needed, consider:  
+  | Library    | Size gzipped | Pros                            | Cons                            |
+  | ---------- | ----------- | ------------------------------- | ------------------------------- |
+  | anime.js   | ~17 KB     | Lightweight, easy tweening API (CSS + JS)  | No built-in scroll trigger features. |
+  | GSAP Core  | ~25 KB     | Powerful timelines, ScrollTrigger plugin | Larger, complexity overhead.  |
+  | Lottie     | ~30 KB gz (Lottie core) | For vector animations (JSON)    | Requires creating/obtaining Lottie JSON. |
+  | Hammer.js  | ~7 KB gz    | Gesture detection (tap/swipe)   | Additional code; only if needed. |
+  | (none)     | 0 KB        | Native APIs (recommend this)    | Manual coding of animations.      |
 
----
+  In practice, **plain JS/CSS** is sufficient. (Per Nate Bal, avoid heavy libraries for simple effects.) For example, use CSS `transition-timing-function: cubic-bezier(…)` or `animation-timing-function: ease-out` to mimic the video’s smooth slows and eases. 
 
-## Image Assets (CC0 / Public-Domain)  
+## Animation Timing & Easing
 
-We will embed 3 images directly via public URLs. All are free to use. Below is a comparison of sourcing options:
+- **Cinematic Transitions:** Use slow ease-in-out or custom cubic-bezier curves. Example: `cubic-bezier(0.42, 0, 0.58, 1)` for smooth acceleration/deceleration. Pan/fade effects ~1–1.5s. 
+- **Particles & Lanterns:** Light floating motion with subtle ease-in-out loops (1–3s repeat). For example, animating a lantern up and down with `animation: translateY(-20px) 5s ease-in-out infinite`. 
+- **Particles/Light Trails:** Quick fade-in (0.3s) and fade-out (0.8s) via CSS. Trigger on `touchmove` using JS and remove after animation end. 
+- **Gift Opening:** Lid transition ~0.7s ease-out plus a brief “burst” (flashing white overlay ~0.3s). 
+- **Candle Flick:** A flick gesture extinguishes with a short puff (0.5s) and flame fading with a “scale up + fade” CSS (like `transform: scale(1.2) opacity 0`). 
+- **Typing Letter:** Use setInterval (25–50ms per character; a longer delay at line breaks) to simulate typing. (The letter content can be stored in a JS string literal.) 
+- **Heart Beat (final):** Use `@keyframes heartbeat` (scale 1↔1.1 over 1–1.5s, infinite, ease-in-out). 
+- **Overall Flow:** Sequence animations so one ends then the next section is shown. Use `setTimeout` or `animationend` callbacks to chain screens. (Example: after gift lid finishes, flash and `setTimeout(showNextScreen, 400)`.) 
 
-| Source         | Example Content (URL)                               | License            | Pros                                   | Cons                            |
-| -------------- | ----------------------------------------------------| ------------------ | -------------------------------------- | ------------------------------- |
-| **Pexels**     | e.g. https://images.pexels.com/photos/33565541/... (Little girl in costume) | CC0 (free)         | High-quality photos; easy direct URLs; no attribution needed. Large variety (fairy/princess themes). | No cartoon vectors; some images have large file sizes (need compression). |
-| **Unsplash**   | e.g. **(find a princess/castle photo)**               | Unsplash License (free) | Huge library; very high-res; modern photography. Easy for nature/portrait scenes. | Also requires mindful selection (some require unsplash credit ethically). May not have specific “Rapunzel” theme images.  |
-| **Pixabay**    | e.g. (illustration or vector princess image)         | Pixabay License (free) | Many illustrations and vector art (cartoons). Contains Disney-inspired free art. | Quality/art style varies. Often smaller default size (must use correct direct URL). |
+These timings will be fine-tuned by observing the reference video’s pace (once provided), but the above gives a benchmark. We rely on CSS easing for hardware-accelerated performance and minimal JS timers.
 
-We will use **direct image URLs** from these sources (as shown above) in the HTML `<img>` tags. All are royalty-free. For example, we’ll use a child in fairy costume from Pexels (CC0) and a castle or fairy scene from Pexels/Unsplash. (See citations above for examples.) If we later want users to upload/share photos, we could integrate Firebase Storage or Supabase: store user images in cloud storage and save URLs (out of scope for this static demo, but replaceable as noted below).  
+## Touch & Interaction Mapping
 
----
+User interactions (primarily taps and swipes) control the flow:
 
-## 1. Final `index.html` (single-file)  
+- **Tap Star:** `(touchend)` on a star element increments count, plays sparkle effect, and moves star to next position.  
+- **Tap Gift Box:** `touchstart`/`click` on box runs `openGift()`: add `.open` class to animate lid up, then triggers screen change.  
+- **Swipe Candle:** Detect `touchstart` then `touchend` and calculate vertical movement. If motion is upward and speed above threshold, consider it a “blow-out” and remove flame (add class `.off`). Otherwise, if just a tap, do nothing. Use a short touch-move tolerance to distinguish flick from static tap.  
+- **Tap Memory Frame:** On `touchstart`, show modal overlay with enlarged photo. Modal close via a “Close” button or tap outside.  
+- **Upload Photo:** `<input type=file>` change event reads `FileReader` result and saves to `localStorage`. We throttle size (limit 3 photos, each must fit localStorage).  
+- **Envelope Drag:** Optionally allow dragging flap open (via CSS rotation). Simpler: on tap, add `.open` class and show letter.  
+- **Final Secret Box:** Tap the locked box (like gift) toggles secret screen.  
+
+Touch events fire differently than mouse; mobile scrolling is via touch gestures. We’ll call `e.preventDefault()` on touchmove to avoid unwanted scroll. All clickable items also respond to `pointerdown`/`pointerup` or `click` for compatibility (Pointer Events API). The MDN Touch Events guide explains using `touchstart`/`touchmove`/`touchend` to track fingers, which we’ll use in custom handlers. Key is to write minimal logic (no heavy libraries) and provide passive fallbacks if JS is off (e.g. static “continue” button).
+
+## Asset & Image Handling
+
+- **Placeholders:** Use Rapunzel-related **public-domain or CC images** for frames (Wikimedia Commons has Parade photos under CC BY 2.0, though caution is noted that they depict a copyrighted character). We **should not use official Disney art without permission**. Instead, include *generic fantasy-style images* or prompt the user to supply their own art or license-free illustrations. In code, we’ll have placeholder `<img src="rapunzel1.jpg">`, etc., which the developer can replace.  
+- **Data URIs for Simple Assets:** For very small graphics (e.g. icons, sparkles), consider embedding as base64 data URIs to keep one file.  
+- **LocalStorage for User Photos:** When the user taps “+” and selects an image, we convert it with `FileReader.readAsDataURL()`, then `localStorage.setItem("photo0", dataURL)`. On load, check `localStorage` keys “photo0..2” and populate frames. (MDN notes Web Storage max ~10 MiB total, so we can safely fit a couple of small JPG/PNG photos per frame.) Wrap storage calls in `try...catch` to handle `QuotaExceededError` if needed.  
+- **Shared Photo Storage (Optional):**  
+  | Option                | Pros                                         | Cons                                      |
+  |-----------------------|----------------------------------------------|-------------------------------------------|
+  | **Static Repo Files** | Easiest; all visitors see same images.       | No user uploads; needs redeploy for new images. |
+  | **`localStorage`**    | Instant, offline-capable, per-device.        | Limited (~5 MB); not synced; only in same browser. |
+  | **Firebase Storage**  | Cloud sync; can auth users; secure.          | Requires SDK (adds ~7–10KB gz), setup, possible costs beyond free tier. |
+  | **Supabase Storage**  | Similar to Firebase; supports large files.    | Requires account, network; somewhat complex. |
+
+  For simplicity and static site constraints, we use **`localStorage`** (no extra libs, works offline). We inform users that images are stored locally, so another person on a different device won’t see them unless uploaded to a backend. If true sharing is needed, Firebase/Supabase can be integrated later (not in single-file HTML). 
+
+## Core `index.html` Scaffold
+
+Below is an **annotated skeleton** of the single-file approach. It sketches the HTML sections and key scripts – **fill in with actual CSS/JS as per above plans**. Rapunzel images and text are placeholders. Only core structure is shown; full CSS and JS should follow the earlier recommendations.
 
 ```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Happy Birthday Rapunzel!</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Happy Birthday Rapunzel</title>
   <style>
-    /* Mobile-first layout and styles */
-    body { margin:0; padding:0; font-family: 'Comic Sans MS', cursive; background:#000; color:#fff; overflow-x:hidden;}
-    section { display:none; position:relative; width:100vw; height:100vh; text-align:center; }
-    section.active { display:block; }
-    h1,h2,p { margin: 1em; }
-    button { font-size: 1.2em; padding:0.5em 1em; margin-top: 1em; }
-    /* 01 - Intro */
-    #intro { background:#000; color:#fff; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-    #intro .star { width:10px; height:10px; background:yellow; border-radius:50%; animation: glow 1.5s infinite alternate; }
-    @keyframes glow { from { opacity:0.2; transform: scale(0.8);} to { opacity:1; transform: scale(1.2);} }
-    /* 02 - Follow light */
-    #follow { background: #001; }
-    #follow .scene { width:100%; height:100%; position:relative; }
-    #follow .star { position:absolute; width:30px; height:30px; background:yellow; border-radius:50%; }
-    /* layers: stars, moon, particles, lanterns */
-    .moon, .lanterns, .particles, .stars { opacity:0; transition: opacity 0.5s; position:absolute; top:0; left:0; width:100%; height:100%; }
-    .moon.show, .lanterns.show, .particles.show, .stars.show { opacity:1; }
-    /* Example backgrounds for layers */
-    .moon { background:url('https://images.pexels.com/photos/27911835/pexels-photo-27911835.jpeg') center/cover no-repeat; } /* fake moon image */
-    .stars { background: url('https://images.pexels.com/photos/196666/pexels-photo-196666.jpeg') center/cover no-repeat; }
-    .particles { background: url('https://images.pexels.com/photos/355950/pexels-photo-355950.jpeg') center/cover no-repeat; }
-    .lanterns { background: url('https://images.pexels.com/photos/1516680/pexels-photo-1516680.jpeg') center/cover no-repeat; }
-    /* 03 - Gift Box */
-    #gift { background: #001; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-    #gift .box { width:100px; height:100px; background:orange; border-radius:10px; box-shadow: 0 0 20px 5px orange; cursor:pointer; transition: transform 0.3s; }
-    #gift .box:active { transform: scale(0.9); }
-    #gift .cake { display:none; width:100px; height:100px; background:url('https://images.pexels.com/photos/326685/pexels-photo-326685.jpeg') center/cover no-repeat; }
-    #gift .cake.show { display:block; }
-    /* 04 - Candles */
-    #candles { background:#002; display:flex; flex-direction:column; justify-content:center; align-items:center; }
-    #candles .cake-full { width:150px; height:150px; background:#964B00; position:relative; }
-    #candles .candle { width:10px; height:30px; background:yellow; position:absolute; bottom:150px; }
-    #candles .flame { width:0; height:0; border:6px solid transparent; border-bottom-color:orange; position:absolute; top:-12px; left:-3px; }
-    /* Blow-out animation */
-    @keyframes blow { 0% { opacity:1; transform: scale(1);} 100% { opacity:0; transform: scale(3);} }
-    /* 05 - Memory Room */
-    #memory { background:#003; }
-    #memory .frame { display:inline-block; margin:1em; border:5px solid #fff; width:120px; height:120px; overflow:hidden; cursor:pointer; position:relative; }
-    #memory .frame img { width:100%; }
-    #memory .frame:hover { transform: scale(1.05); }
-    /* 06 - Letter */
-    #letter { background:#004; display:flex; justify-content:center; align-items:center; flex-direction:column; padding:20px; }
-    #letter p { white-space: pre-wrap; text-align:left; max-width: 90%; font-family: 'Lucida Handwriting', cursive; font-size:1.2em; }
-    /* 07 - Final Reveal */
-    #final { background:#005; color:#fff; display:flex; justify-content:center; align-items:center; flex-direction:column; }
-    #final h1 { font-size:2em; }
-    #final p { font-size:1.2em; margin:1em; }
-    /* PS section */
-    #final #psBtn { margin-top:20px; font-size:1.5em; }
-    #final #psContent { margin-top:10px; font-size:1.2em; }
+    /* Global styles (mobile-first) */
+    body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#110022; color:#fff; font-family:sans-serif; }
+    .screen { position:absolute; width:100%; height:100%; top:0; left:0; display:none; }
+    .active { display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    /* ... Additional CSS: animations, transforms, layout for each screen ... */
   </style>
 </head>
 <body>
 
-  <!-- 01 — Mystery Intro -->
-  <section id="intro" class="active">
-    <div class="star"></div>
-    <h1>Wait…</h1>
-    <p>I made something for you.<br>But you have to find it.</p>
-    <button id="startBtn">Start ✨</button>
-  </section>
+<!-- Opening Screen -->
+<div id="screen-opening" class="screen active">
+  <!-- Background stars/sky (CSS) -->
+  <h1 style="font-size:3em; margin-bottom:0.5em;">Wait…</h1>
+  <p>I made something for you. But you have to find it.</p>
+  <button onclick="startHunt()">Start ✨</button>
+</div>
 
-  <!-- 02 — Follow the Light -->
-  <section id="follow">
-    <div class="scene">
-      <div id="movingStar" class="star"></div>
-      <div class="stars" id="starsLayer"></div>
-      <div class="moon" id="moonLayer"></div>
-      <div class="particles" id="particlesLayer"></div>
-      <div class="lanterns" id="lanternsLayer"></div>
-    </div>
-    <p id="followMsg"></p>
-  </section>
+<!-- Star Hunt Screen -->
+<div id="screen-starhunt" class="screen">
+  <div id="star-count">0/5 Stars</div>
+  <!-- Magic Star element -->
+  <div id="magic-star" style="width:50px; height:50px; background:url('star.png');"></div>
+</div>
 
-  <!-- 03 — Mystery Box -->
-  <section id="gift">
-    <div class="box" id="giftBox"></div>
-    <div class="cake" id="cakeImage"></div>
-    <p id="giftMsg">I have something for you…</p>
-  </section>
+<!-- Mystery Gift Screen -->
+<div id="screen-gift" class="screen">
+  <h2>There you are ❤️</h2>
+  <p>I have something for you...</p>
+  <div id="gift-box" onclick="openGift()">
+    <div id="lid"></div>
+    <div id="bow"></div>
+  </div>
+  <p>Tap the box</p>
+</div>
 
-  <!-- 04 — Candle Wishing -->
-  <section id="candles">
-    <div class="cake-full" id="cakeFull">
-      <!-- Example: add 3 candles -->
-      <div class="candle" style="left:60px;" id="candle0"><div class="flame"></div></div>
-      <div class="candle" style="left:45px;" id="candle1"><div class="flame"></div></div>
-      <div class="candle" style="left:75px;" id="candle2"><div class="flame"></div></div>
-    </div>
-    <p id="wishMsg">Make a wish.</p>
-  </section>
+<!-- Cake with Candles -->
+<div id="screen-cake" class="screen">
+  <h2>Make a wish…</h2>
+  <div id="cake-container">
+    <img src="cake.png" alt="Birthday Cake">
+    <!-- Three candles -->
+    <div class="candle" data-index="0"><div class="flame"></div></div>
+    <div class="candle" data-index="1"><div class="flame"></div></div>
+    <div class="candle" data-index="2"><div class="flame"></div></div>
+  </div>
+  <p>Swipe the candles out</p>
+</div>
 
-  <!-- 05 — Memory Room -->
-  <section id="memory">
-    <h2>Memories</h2>
-    <div class="frame"><img id="photo0" src="" alt="Memory 1"></div>
-    <div class="frame"><img id="photo1" src="" alt="Memory 2"></div>
-    <div class="frame"><img id="photo2" src="" alt="Memory 3"></div>
-  </section>
+<!-- Memory Room -->
+<div id="screen-memory" class="screen">
+  <h2>A Little Memory Room</h2>
+  <div id="memory-grid">
+    <div class="frame" data-index="0"><img id="photo0" src="rapunzel1.jpg" alt="Memory 1"></div>
+    <div class="frame" data-index="1"><img id="photo1" src="rapunzel2.jpg" alt="Memory 2"></div>
+    <div class="frame" data-index="2"><img id="photo2" src="rapunzel3.jpg" alt="Memory 3"></div>
+    <button id="add-photo">+</button>
+  </div>
+  <button onclick="goToLetter()">Continue 💌</button>
+</div>
 
-  <!-- 06 — Letter -->
-  <section id="letter">
-    <h2>One more thing…</h2>
-    <p id="letterContent"></p>
-  </section>
+<!-- Memory Modal (hidden by default) -->
+<div id="memory-modal" class="screen">
+  <div id="modal-card">
+    <img id="modal-img" src="" alt="Memory Photo">
+    <h3 id="modal-title">A little memory…</h3>
+    <p id="modal-text">A nice moment to remember.</p>
+    <button onclick="closeMemory()">Close</button>
+  </div>
+</div>
 
-  <!-- 07 — Final Reveal -->
-  <section id="final">
-    <h1>Happy Birthday, Rapunzel.</h1>
-    <p>I hope this little world made you smile.<br>Because you deserve a beautiful year ahead. ❤️</p>
-    <div id="psBtn" style="cursor:pointer; text-decoration:underline;">P.S. …</div>
-    <p id="psContent" style="display:none;">You thought that was everything? 👀</p>
-  </section>
+<!-- Letter Screen -->
+<div id="screen-letter" class="screen">
+  <h2>Okay...</h2>
+  <p>One last thing.</p>
+  <div id="envelope" onclick="openEnvelope()">
+    <!-- Envelope artwork (CSS) -->
+  </div>
+  <div id="letter-content">
+    <h2>For You ❤️</h2>
+    <pre id="typed-letter"></pre>
+    <button onclick="goToFinal()">Keep going 🌙</button>
+  </div>
+</div>
 
-  <script>
-    // Variables
-    const name = "Rapunzel";
-    document.querySelector('#final h1').textContent = "Happy Birthday, " + name + ".";
+<!-- Final World Screen -->
+<div id="screen-final" class="screen">
+  <!-- Parallax layers (moon, lanterns, etc.) -->
+  <div id="final-world">
+    <img id="moon" src="moon.png">
+    <div class="lantern" style="left:10%; top:30%;"></div>
+    <div class="lantern" style="right:12%; top:40%;"></div>
+    <div class="lantern" style="left:25%; top:65%;"></div>
+    <div id="heart" class="heartbeat">❤️</div>
+  </div>
+  <div id="final-message">
+    <h1>Happy Birthday, <span id="birthday-name">Rapunzel</span> 🎉</h1>
+    <p>I hope this little world made you smile...</p>
+    <button onclick="showSecret()">P.S. …</button>
+  </div>
+</div>
 
-    // Section elements
-    const intro = document.getElementById('intro');
-    const follow = document.getElementById('follow');
-    const gift = document.getElementById('gift');
-    const candles = document.getElementById('candles');
-    const memory = document.getElementById('memory');
-    const letterSec = document.getElementById('letter');
-    const final = document.getElementById('final');
-    const psBtn = document.getElementById('psBtn');
-    const psContent = document.getElementById('psContent');
+<!-- Secret Screen -->
+<div id="screen-secret" class="screen">
+  <h2 class="secret-question">You thought that was everything?</h2>
+  <div id="secret-box" onclick="openSecret()"></div>
+  <p>Tap the little box</p>
+</div>
 
-    // 01: Start button -> Show follow section
-    document.getElementById('startBtn').onclick = () => {
-      intro.classList.remove('active');
-      follow.classList.add('active');
-      follow.style.background = '#001';
-      // Begin moving star animation
-      moveStar();
-    };
+<!-- Secret Reveal Screen -->
+<div id="screen-secret2" class="screen">
+  <div class="secret-reveal-card">
+    <h2>Secret Unlocked 🔓</h2>
+    <p>And if you reached this far... you're officially part of this little world. ❤️ Never stop smiling.</p>
+  </div>
+</div>
 
-    // 02: Follow the Light sequence
-    let taps = 0;
-    const maxTaps = 5;
-    const followMsg = document.getElementById('followMsg');
-    function moveStar() {
-      const star = document.getElementById('movingStar');
-      star.style.top = Math.random()*80 + "vh";
-      star.style.left = Math.random()*80 + "vw";
-    }
-    document.getElementById('movingStar').onclick = () => {
-      taps++;
-      // Reveal layers one by one
-      if (taps === 1) document.getElementById('starsLayer').classList.add('show');
-      if (taps === 2) document.getElementById('moonLayer').classList.add('show');
-      if (taps === 3) document.getElementById('particlesLayer').classList.add('show');
-      if (taps === 4) document.getElementById('lanternsLayer').classList.add('show');
-      if (taps >= 5) {
-        followMsg.textContent = "There you are. ❤️";
-        // Proceed to gift box
-        setTimeout(()=>{ follow.classList.remove('active'); gift.classList.add('active'); }, 1000);
-      } else {
-        moveStar();
+<!-- Hidden file input for photos -->
+<input type="file" id="photo-input" accept="image/*" style="display:none" multiple>
+
+<script>
+/* === Configuration === */
+const BIRTHDAY_NAME = "Rapunzel";
+const LETTER = `Hey Rapunzel,\n\nI could have just said "Happy Birthday."\nBut this felt too ordinary. ...\n\nHappy Birthday. ❤️`;
+
+/* === Helper to switch screens === */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* === Screen Flow Functions === */
+function startHunt() {
+  showScreen('screen-starhunt');
+  // Initialize star positions & count
+}
+function openGift() {
+  // Animate gift lid open
+  // After animation, flash and show cake screen
+  setTimeout(() => showScreen('screen-cake'), 800);
+}
+function goToLetter() {
+  showScreen('screen-letter');
+}
+function goToFinal() {
+  showScreen('screen-final');
+}
+function showSecret() {
+  showScreen('screen-secret');
+}
+function openSecret() {
+  // flash and reveal secret
+  setTimeout(() => showScreen('screen-secret2'), 400);
+}
+
+/* === Star Hunt === */
+// Positions of 5 stars on screen (percentages)
+const starPositions = [[30,40],[70,30],[50,60],[20,70],[80,50]];
+let starCount = 0;
+document.getElementById('magic-star').addEventListener('click', () => {
+  starCount++;
+  document.getElementById('star-count').innerText = `${starCount}/5 Stars`;
+  // Show particles (sparks)
+  if (starCount === 5) {
+    setTimeout(() => showScreen('screen-gift'), 500);
+  } else {
+    // move star to next position
+    let [x,y] = starPositions[starCount]||[50,50];
+    let star = document.getElementById('magic-star');
+    star.style.left = x + '%'; star.style.top = y + '%';
+  }
+});
+
+/* === Candle Interaction === */
+let candlesLit = 3;
+document.querySelectorAll('.candle').forEach(candle => {
+  candle.addEventListener('touchend', function(e) {
+    // Simple tap - turn off
+    if (!candle.classList.contains('off')) {
+      candle.classList.add('off');
+      candlesLit--;
+      if (candlesLit === 0) {
+        // All blown out
+        setTimeout(() => { showScreen('screen-memory'); }, 800);
       }
-    };
+    }
+  });
+});
 
-    // 03: Gift Box open -> show cake
-    document.getElementById('giftBox').onclick = () => {
-      document.getElementById('giftBox').style.transform = 'scale(0)';
-      document.getElementById('cakeImage').classList.add('show');
-      setTimeout(()=>{
-        gift.classList.remove('active');
-        candles.classList.add('active');
-      }, 1000);
+/* === Memory Room === */
+/* Load saved photos or use defaults */
+window.addEventListener('DOMContentLoaded', () => {
+  for (let i = 0; i < 3; i++) {
+    let data = localStorage.getItem('birthday_photo_' + i);
+    if (data) {
+      document.getElementById('photo'+i).src = data;
+    }
+  }
+});
+/* Open memory modal */
+document.querySelectorAll('.frame').forEach(frame => {
+  frame.addEventListener('click', () => {
+    let idx = frame.getAttribute('data-index');
+    let img = document.getElementById('photo'+idx).src;
+    document.getElementById('modal-img').src = img;
+    // Titles/text could come from an array or defaults
+    showScreen('screen-memory-modal');
+  });
+});
+function closeMemory() {
+  showScreen('screen-memory');
+}
+/* Add photo */
+document.getElementById('add-photo').addEventListener('click', () => {
+  document.getElementById('photo-input').click();
+});
+document.getElementById('photo-input').addEventListener('change', (e) => {
+  const files = e.target.files;
+  for (let i = 0; i < files.length && i < 3; i++) {
+    let reader = new FileReader();
+    reader.onload = ev => {
+      localStorage.setItem('birthday_photo_' + i, ev.target.result);
+      document.getElementById('photo'+i).src = ev.target.result;
     };
+    reader.readAsDataURL(files[i]);
+  }
+});
 
-    // 04: Blow out 3 candles
-    const candleCount = 3;
-    let blown = 0;
-    function blowCandle(i) {
-      const flame = document.getElementById('candle'+i).querySelector('.flame');
-      flame.style.animation = 'blow 1s forwards';
-      blown++;
-      if (blown >= candleCount) {
-        // Celebration (confetti) - simple CSS flash
-        candles.classList.add('celebrate');
-        setTimeout(()=>{
-          candles.classList.remove('celebrate');
-          candles.classList.remove('active');
-          memory.classList.add('active');
-        }, 1000);
+/* === Letter Envelope === */
+function openEnvelope() {
+  // add class to animate envelope opening
+  document.getElementById('envelope').classList.add('open');
+  setTimeout(() => {
+    // show letter text and type it out
+    showScreen('screen-letter');
+    const textEl = document.getElementById('typed-letter');
+    let i=0;
+    function typeChar() {
+      if (i < LETTER.length) {
+        textEl.textContent += LETTER[i++];
+        setTimeout(typeChar, LETTER[i-1]==='\n' ? 400 : 30);
       }
     }
-    // Attach click to each candle
-    for (let i=0; i<candleCount; i++) {
-      document.getElementById('candle'+i).onclick = () => blowCandle(i);
-    }
+    typeChar();
+  }, 600);
+}
 
-    // 05: Load memory images (or placeholder) into frames
-    const defaultImages = [
-      "https://images.pexels.com/photos/33565541/pexels-photo-33565541.jpeg",  // little girl in costume
-      "https://images.pexels.com/photos/27911835/pexels-photo-27911835.jpeg",  // fairy woman
-      "https://images.pexels.com/photos/17892641/pexels-photo-17892641.jpeg"   // pink castle (princess castle)
-    ];
-    for (let i=0; i<3; i++) {
-      const saved = localStorage.getItem("photo"+i);
-      const img = document.getElementById("photo"+i);
-      if (saved) {
-        img.src = saved;
-      } else {
-        img.src = defaultImages[i];
-      }
-    }
+/* === Final Personalization === */
+document.getElementById('birthday-name').innerText = BIRTHDAY_NAME;
 
-    // Optional: allow updating photos by click-to-upload (skipped: site is read-only).
+/* === Optional: Parallax (pointermove) === */
+document.addEventListener('pointermove', e => {
+  let active = document.querySelector('.screen.active');
+  if (!active) return;
+  let xNorm = (e.clientX / window.innerWidth - 0.5) * 20;
+  let yNorm = (e.clientY / window.innerHeight - 0.5) * 20;
+  // Apply subtle transform to floating objects
+  document.querySelectorAll('.lantern').forEach(ln => {
+    ln.style.transform = `translate(${xNorm/5}%, ${yNorm/5}%)`;
+  });
+  document.getElementById('moon').style.transform = `translate(${xNorm}px, ${yNorm}px)`;
+});
 
-    // 06: Typewriter letter content
-    const letterText = `Dear ${name},\n\nHappy Birthday! 🎉\n\nI wanted to create something special just for you – a little world full of love, memories, and surprises. Every star, lantern, and photo here reminds me of our moments together. You’ve brought so much light into my life – like the brightest star in the sky.\n\nMay your year ahead be as beautiful and magical as you are. I hope this makes you smile!\n\nLove always,\nYour [Name]`;
-    const letterElem = document.getElementById('letterContent');
-    let idx = 0;
-    function typeLetter() {
-      if (idx < letterText.length) {
-        letterElem.textContent += letterText[idx++];
-        setTimeout(typeLetter, 50);
-      } else {
-        // After typing, show final reveal
-        setTimeout(()=>{
-          letterSec.classList.remove('active');
-          final.classList.add('active');
-        }, 500);
-      }
-    }
-    // Start typing when memory section finishes. For simplicity, start immediately.
-    memory.onclick = () => {
-      memory.classList.remove('active');
-      letterSec.classList.add('active');
-      typeLetter();
-    };
+/* Additional interactions (e.g. swipe gestures, particle bursts, etc.) would go here. */
 
-    // 07: Secret P.S.
-    psBtn.onclick = () => {
-      psContent.style.display = 'block';
-      psBtn.style.display = 'none';
-    };
-  </script>
+</script>
+
 </body>
 </html>
 ```
 
-> **Notes on the code:**  
-> - The above HTML is self-contained (no external files). CSS is embedded, as is JS.  
-> - Replace **Image URLs** in `defaultImages` with any CC0/royalty-free Rapunzel-themed images. (We used Pexels examples here.)  
-> - The letter text is sample; customize in the `letterText` variable.  
-> - The small style and animation details ensure fluid feel on mobile and desktop. All animations use `transform`, `opacity`, or `keyframes` without heavy layouts (per MDN/Web.dev advice).  
-> - We disabled the photo-upload input for simplicity (since no server). To allow user-supplied images later, one could upload to Firebase/Supabase and save URLs in `localStorage`.
+This scaffold is intentionally **annotated and incomplete**: replace placeholder images/text with final assets, fill in the CSS animations/keyframes, and tune JS interactions. The IDs/classes match the feature list above, making it easy to locate code for each effect.
 
----
+## Testing & Deployment
 
-## 4. Testing Plan (devices, performance, compatibility)  
+- **Test on devices:** Verify on real phones/tablets that **touch gestures** work smoothly and no jank (aim for 60fps). Use Chrome DevTools (mobile emulation) and actual iOS/Android. Check that all screens show/hide correctly and `localStorage` saves images.  
+- **Progressive Enhancement:** With JavaScript disabled (or in a very old browser), ensure the core message is still accessible. For example, each screen could show a simple fallback message or continue button. (At minimum, the final “Happy Birthday” should always display.)  
+- **Performance:** Run Lighthouse or WebPageTest to check that the site loads quickly (it should, as it's a single small HTML with no external libs). Ensure the total `index.html` size stays small (< 200KB gz) by compressing images and inlining only tiny assets. Use `requestAnimationFrame` loops sparingly to avoid battery drain. Remove any unused code.  
+- **Accessibility:** Ensure color contrast is OK, text readable, and interactive elements are large enough (44px tap targets). Use `aria-label` on buttons if needed.  
+- **Deployment:** Once ready, commit `index.html` (and any non-inlined assets) to a GitHub repo. In GitHub settings → Pages, select the main branch and `/ (root)` as source. Wait a few minutes and then visit `https://<username>.github.io/<repo>/`. The site will be served entirely as static files.  
+- **Checklist:**  
+  - [ ] Index.html is in root and is the only file needed (besides images, fonts).  
+  - [ ] All `console.log`/debug code removed.  
+  - [ ] Tested `localStorage` image upload (select a few photos, refresh page, and see them reappear).  
+  - [ ] Animations run on low-power mode (reduce to 30fps if needed, or provide CSS prefers-reduced-motion fallback).  
+  - [ ] No third-party cookies or tracking (it’s a personal gift site).  
+  - [ ] If internet images used (CDN), ensure `https://` links to avoid “mixed content”.  
 
-- **Devices:** Test on modern iOS and Android phones (Chrome, Safari, Firefox for Android). Also check on a desktop browser (Chrome, Edge, Safari) to ensure responsive scaling.  
-- **Performance:** Run Lighthouse audits to check mobile performance. Aim for <2s load. The single-file load and small images should score well (avoid large layout shifts). Check animations are smooth (60FPS) and use GPU.  
-- **Interactions:** Verify all taps/clicks trigger the correct sequence. Ensure tap areas are not too small. Test keyboard-only navigation: focus “Start” and “P.S.” with Tab and press Enter.  
-- **Accessibility:** Use a screen reader (e.g. NVDA or VoiceOver) to ensure alt text and ARIA labels are read. Verify color contrast meets WCAG guidelines (text on backgrounds is readable). Also test with `prefers-reduced-motion` (browser setting); if possible, ensure disabling animation still shows key states.  
-- **Fallbacks:** Temporarily disable JS to ensure the final greeting at least appears. The intro section’s “Start” will not work without JS, but at minimum initial text is visible. (Optionally, we could include a `<noscript>` fallback message.)  
-- **Cross-browser:** Check fallback on older browsers: for example, verify IE11 or old Edge gracefully shows content (no critical failures). If needed, add simple CSS fallbacks (e.g. avoid `var()` usage, ensure `@keyframes` have adequate prefixes).  
-- **Hosting:** Finally, serve via GitHub Pages (or a static server) and test the live URL on mobile networks to ensure no mixed-content errors (all assets via HTTPS).
+Following this plan will yield a **fully interactive, Rapunzel-themed birthday website** that captures the cinematic feel of the reference video, runs efficiently on mobile, and can be easily hosted on GitHub Pages. All content resides in one file for simplicity, and the design gracefully degrades if needed. 
 
----
-
-## 5. Swapping Images & Enabling User Uploads  
-
-To replace images later, simply change the URLs in the `defaultImages` array in the HTML. For dynamic user images: one option is to integrate a backend-less upload. For example, add a file input and on change, upload the file to [Firebase Storage](https://firebase.google.com/docs/storage) or [Supabase Storage](https://supabase.com/docs/guides/storage). Once uploaded, get the public URL and save it to `localStorage` or prompt the user to share that URL. You could also store it in the URL hash or a short-code database if needed. In-code notes:  
-
-```js
-// Example: after uploading to Firebase, store URL:
-// const uploadedUrl = /* result from Firebase upload */;
-// localStorage.setItem("photo0", uploadedUrl);
-```
-
-Then on next load, `loadPhotos()` will use that URL instead of the default. This is *optional* – the current site is fully static.
-
----
-
-## User Flow Timeline (Mermaid)  
-```mermaid
-timeline
-    title Interactive Birthday Flow
-    12:00 AM : Mystery (Dark screen with tiny star)
-    12:01 AM : Follow the Light (Star moves, layers appear)
-    12:02 AM : Open Gift (Tap box, reveal cake)
-    12:03 AM : Make a Wish (Place/blow 3 candles)
-    12:04 AM : Celebration (Confetti burst)
-    12:05 AM : Memory Room (Tap photos)
-    12:06 AM : Read Letter (Typewriter effect)
-    12:07 AM : Final Reveal (Zoom out, Happy Birthday)
-    12:08 AM : Secret P.S. (Surprise message)
-```
-
-## Storage Options Diagram (Mermaid)  
-```mermaid
-classDiagram
-    class LocalStorage {
-      +images: String (JSON/URL)
-      +letter: String
-    }
-    class RemoteStorage {
-      +images: String (public URLs)
-      +letter: String
-    }
-    class UserDevice {
-      +useLocal()
-      +useRemote()
-    }
-    UserDevice --> LocalStorage : “stores in”
-    UserDevice --> RemoteStorage : “uploads to”
-    %% Description:
-    %% Photos/letters can be kept on device (localStorage) or synced to a backend (e.g. Firebase/Supabase).
-```  
-
-**Sources:** Design trends and animation best practices were guided by industry research. Interactive storytelling and micro-interactions are increasingly popular. Performance-first (lean code, optimized images, GPU-accelerated CSS) is required in 2026. Accessibility (alt text, contrasts, keyboard control) is a top priority. These references shaped the implementation approach above.  
+**Sources:** We applied mobile animation best practices, localStorage limits, and animation library comparisons to guide our implementation. The MDN Progressive Enhancement guide emphasizes starting simple and layering effects. GitHub’s documentation shows that a static HTML with `index.html` is enough for Pages. Finally, we noted that Disney’s Rapunzel images on Wikimedia Commons are CC BY but may have legal constraints, so we use them cautiously or encourage user-supplied art. 
 
